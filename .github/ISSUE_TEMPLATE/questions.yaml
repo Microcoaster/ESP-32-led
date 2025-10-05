@@ -1,0 +1,35 @@
+name: ❓ Poser une question
+description: Posez une question sur le projet. Pour les discussions générales, utilisez les discussions GitHub.
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Question
+        Posez votre question ici. Soyez clair et précis pour obtenir une réponse rapide.
+  - type: textarea
+    id: question
+    attributes:
+      label: Votre question
+      description: Décrivez votre question en détail.
+      placeholder: "Quelle est votre question ?"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte supplémentaire
+      description: Tout contexte ou informations supplémentaires pour aider à répondre.
+      placeholder: "Ajoutez des détails si nécessaire..."
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Liste de contrôle
+      options:
+        - label: J'ai vérifié les issues existantes et les discussions
+          required: true
+        - label: J'ai lu les directives de contribution
+          required: true
+        - label: J'accepte de suivre le code de conduite du projet
+          required: true

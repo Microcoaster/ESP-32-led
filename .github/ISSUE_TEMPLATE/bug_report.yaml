@@ -1,0 +1,45 @@
+name: 🐛 Rapport de bug
+description: Signaler un bug. Si ce n'est pas un bug, choisissez un autre type d'issue.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Rapport de bug
+        Veuillez fournir autant de détails que possible pour nous aider à reproduire et corriger le problème.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Que s'est-il passé ?
+      description: Une description claire et concise du bug, incluant les étapes pour reproduire et des captures d'écran si applicable.
+      placeholder: "Décrivez le bug ici, ajoutez des détails et captures d'écran..."
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Sur quels navigateurs voyez-vous le problème ?
+      multiple: true
+      options:
+        - Firefox
+        - Chrome
+        - Safari
+        - Brave
+        - Microsoft Edge
+        - Autre
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Liste de contrôle
+      options:
+        - label: J'ai vérifié les issues existantes
+          required: true
+        - label: J'ai lu les directives de contribution
+          required: true
+        - label: J'accepte de suivre le code de conduite du projet
+          required: true
+        - label: Je veux travailler sur cette issue
+          required: false

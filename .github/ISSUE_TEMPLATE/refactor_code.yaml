@@ -1,0 +1,43 @@
+name: 🔄 Refactorisation du code
+description: Utilisez ceci pour les tâches de refactorisation du code.
+title: "[Refactor] "
+labels: ["refactorisation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Refactorisation du code
+        Suggérer ou décrire une tâche de refactorisation du code.
+  - type: textarea
+    id: current-code
+    attributes:
+      label: Code actuel
+      description: Décrivez le code qui nécessite une refactorisation.
+      placeholder: "Chemins de fichiers, extraits..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-refactor
+    attributes:
+      label: Refactorisation proposée
+      description: Comment devrait-il être refactorisé ? Avantages ?
+      placeholder: "Améliorations en lisibilité, performance..."
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact potentiel
+      description: Risques ou dépendances ?
+      placeholder: "Changements cassants ? Tests nécessaires ?"
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Liste de contrôle
+      options:
+        - label: J'ai vérifié les issues existantes
+          required: true
+        - label: J'ai lu les directives de contribution
+          required: true
+        - label: J'accepte de suivre le code de conduite du projet
+          required: true

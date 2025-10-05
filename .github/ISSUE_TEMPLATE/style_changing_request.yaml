@@ -1,0 +1,43 @@
+name: 🎨 Demande de changement de style
+description: Suggérer un design de style.
+title: "[Style] "
+labels: ["design"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Demande de changement de style
+        Proposer des changements au style visuel ou au design.
+  - type: textarea
+    id: current-style
+    attributes:
+      label: Style actuel
+      description: Décrivez le style existant qui nécessite un changement.
+      placeholder: "Captures d'écran ou descriptions..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-style
+    attributes:
+      label: Style proposé
+      description: Quels changements suggérez-vous ?
+      placeholder: "Couleurs, mises en page, maquettes..."
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Justification
+      description: Pourquoi ce changement ? Avantages ?
+      placeholder: "Accessibilité, cohérence..."
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Liste de contrôle
+      options:
+        - label: J'ai vérifié les issues existantes
+          required: true
+        - label: J'ai lu les directives de contribution
+          required: true
+        - label: J'accepte de suivre le code de conduite du projet
+          required: true

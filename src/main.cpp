@@ -27,7 +27,7 @@ AyresWiFiManager wifi;
 
 // Configuration serveur WebSocket - Basculez entre ws (local) et wss (production)
 #define SERVER_USE_SSL false                       // true = wss (SSL/TLS), false = ws (plain)
-const char* server_host = "192.168.1.16";        // Adresse IP/domaine du serveur (192.168.1.16 pour local, app.microcoaster.com pour production)
+const char* server_host = "192.168.1.15";        // Adresse IP/domaine du serveur (192.168.1.16 pour local, app.microcoaster.com pour production)
 const uint16_t server_port = 3000;                 // Port du serveur (3000 pour ws, 443 pour wss)
 const char* websocket_path = "/esp32";             // Endpoint WebSocket dédié aux modules ESP32
 // Empreinte SSL optionnelle (fingerprint SHA1) - laissez vide "" pour ne pas vérifier
@@ -69,6 +69,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 void authenticateModule();
 void handleConnected(const char* payload);
 void handleCommand(const char* payload);
+void handlePing(const char* payload);
 void handleError(const char* payload);
 void updateLEDs();
 void sendCommandResponse(const String& command, const String& status, const String& position);
@@ -187,9 +188,9 @@ void loop() {
   unsigned long now = millis();                 // Timestamp actuel
   
   // *** MONITORING WIFI PÉRIODIQUE ***
-  // Vérification du statut WiFi toutes les 30 secondes
+  // Vérification du statut WiFi toutes les 15 secondes (plus fréquent)
   
-  if (millis() - lastStatusCheck > 30000) {
+  if (millis() - lastStatusCheck > 15000) {
     lastStatusCheck = millis();
     bool currentState = wifi.isConnected();
     
@@ -225,8 +226,21 @@ void loop() {
     // Traitement des messages WebSocket entrants
     webSocket.loop();
     
-    // Envoi périodique de heartbeat (keepalive) - toutes les 30 secondes
-    if (isAuthenticated && now - lastHeartbeat > 30000) {
+    // Vérification de l'état de la connexion WebSocket
+    static unsigned long lastWebSocketCheck = 0;
+    if (millis() - lastWebSocketCheck > 10000) {  // Toutes les 10 secondes
+      lastWebSocketCheck = millis();
+      if (!webSocket.isConnected() && isAuthenticated) {
+        Serial.println("[SWITCH TRACK] ⚠️  Connexion WebSocket perdue - Reset de l'authentification");
+        isAuthenticated = false;
+        digitalWrite(LED_LEFT_PIN, LOW);
+        digitalWrite(LED_RIGHT_PIN, LOW);
+        connectSocket();
+      }
+    }
+    
+    // Envoi périodique de heartbeat (keepalive) - toutes les 60 secondes (réduit pour éviter conflits)
+    if (isAuthenticated && now - lastHeartbeat > 60000) {
       sendHeartbeat();
       lastHeartbeat = now;
     }
@@ -249,9 +263,16 @@ void loop() {
 // Établit la connexion WebSocket avec le serveur (ws ou wss selon configuration)
 void connectSocket() {
   Serial.println("[WEBSOCKET] 🔗 Connexion WebSocket...");
+
+  // Vérification préalable de la connexion WiFi
+  if (!wifi.isConnected()) {
+    Serial.println("[WEBSOCKET] ⚠️  WiFi non connecté - Annulation connexion WebSocket");
+    return;
+  }
+
   Serial.println("[WEBSOCKET] 📍 Module ID: " + MODULE_ID);
   Serial.println("[WEBSOCKET] 🔑 Password: " + MODULE_PASSWORD.substring(0, 8) + "...");
-  
+
   // Configuration de la connexion WebSocket selon le flag SSL
   #if SERVER_USE_SSL
     Serial.println("[WEBSOCKET] 🔒 Mode: WSS (SSL/TLS activé)");
@@ -268,12 +289,12 @@ void connectSocket() {
     webSocket.begin(server_host, server_port, websocket_path);
     Serial.printf("[WEBSOCKET] 🤖 WebSocket: ws://%s:%d%s\n", server_host, server_port, websocket_path);
   #endif
-  
+
   webSocket.onEvent(webSocketEvent);           // Gestionnaire d'événements
-  webSocket.setReconnectInterval(5000);        // Reconnexion automatique toutes les 5s
-  webSocket.enableHeartbeat(15000, 3000, 2);   // Heartbeat WebSocket: 15s interval, 3s timeout, 2 essais
-  
-  Serial.println("[WEBSOCKET] ✅ ESP32 Switch Track prêt (Architecture hybride)!");
+  webSocket.setReconnectInterval(3000);        // Reconnexion automatique toutes les 3s (réduit)
+  webSocket.enableHeartbeat(30000, 10000, 3);  // Heartbeat WebSocket: 30s interval, 10s timeout, 3 essais (plus long)
+
+  Serial.println("[WEBSOCKET] ✅ ESP32 Switch Track prêt (Configuration optimisée)!");
 }
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
@@ -284,10 +305,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       break;
       
     case WStype_DISCONNECTED:
-      Serial.println("[SWITCH TRACK] 🔴 Déconnexion du serveur");
+      Serial.println("[SWITCH TRACK] 🔴 Déconnexion du serveur - Tentative de reconnexion immédiate");
       isAuthenticated = false;
       digitalWrite(LED_LEFT_PIN, LOW);
       digitalWrite(LED_RIGHT_PIN, LOW);
+      // Tentative de reconnexion immédiate
+      delay(1000);
+      connectSocket();
       break;
       
     case WStype_TEXT: {
@@ -300,6 +324,8 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       
       if (msgType == "connected") {
         handleConnected((char*)payload);
+      } else if (msgType == "ping") {
+        handlePing((char*)payload);
       } else if (msgType == "command") {
         handleCommand((char*)payload);
       } else if (msgType == "error") {
@@ -366,27 +392,48 @@ void handleCommand(const char* payload) {
   if (command == "switch_left" || command == "left" || command == "switch_to_A") {
     newPosition = "left";
     Serial.println("[SWITCH TRACK] 🔄 Aiguillage simulé vers la GAUCHE");
-    
+
   } else if (command == "switch_right" || command == "right" || command == "switch_to_B") {
     newPosition = "right";
     Serial.println("[SWITCH TRACK] 🔄 Aiguillage simulé vers la DROITE");
-    
+
   } else if (command == "get_position") {
     // Pas de changement de position, juste retourner l'état
     Serial.println("[SWITCH TRACK] 📍 Position actuelle: " + currentPosition);
-    
+
   } else {
     Serial.println("[SWITCH TRACK] ❌ Commande inconnue: " + command);
     status = "unknown_command";
   }
-  
+
   currentPosition = newPosition;
   updateLEDs(); // Mettre à jour les LEDs après changement de position
-  
+
   // Envoyer la réponse de commande (WebSocket natif)
   sendCommandResponse(command, status, currentPosition);
-  
+
   Serial.println("[SWITCH TRACK] ✅ Commande exécutée: " + currentPosition);
+}
+
+void handlePing(const char* payload) {
+  Serial.println("[SWITCH TRACK] 🏓 Ping reçu du serveur - Envoi du pong");
+
+  // Parse du ping pour récupérer le timestamp
+  JsonDocument doc;
+  deserializeJson(doc, payload);
+
+  // Répondre avec un pong contenant le même timestamp
+  JsonDocument pongDoc;
+  pongDoc["type"] = "pong";
+  pongDoc["moduleId"] = MODULE_ID;
+  pongDoc["password"] = MODULE_PASSWORD;
+  pongDoc["timestamp"] = doc["timestamp"];
+
+  String pongMessage;
+  serializeJson(pongDoc, pongMessage);
+  webSocket.sendTXT(pongMessage);
+
+  Serial.println("[SWITCH TRACK] 🏓 Pong envoyé: " + pongMessage);
 }
 
 void handleError(const char* payload) {
@@ -431,7 +478,16 @@ void sendCommandResponse(const String& command, const String& status, const Stri
 
 void sendHeartbeat() {
   if (!isAuthenticated) return;
-  
+
+  // Vérification de la mémoire disponible
+  uint32_t freeHeap = ESP.getFreeHeap();
+  Serial.printf("[SWITCH TRACK] 💾 Mémoire libre: %d bytes\n", freeHeap);
+
+  // Alerte si mémoire faible
+  if (freeHeap < 50000) {  // Moins de 50KB libre
+    Serial.println("[SWITCH TRACK] ⚠️  Mémoire faible détectée !");
+  }
+
   JsonDocument doc;
   doc["type"] = "heartbeat";
   doc["moduleId"] = MODULE_ID;
@@ -439,16 +495,14 @@ void sendHeartbeat() {
   doc["uptime"] = millis() - uptimeStart;
   doc["position"] = currentPosition;
   doc["wifiRSSI"] = WiFi.RSSI();
-  doc["freeHeap"] = ESP.getFreeHeap();
-  
+  doc["freeHeap"] = freeHeap;
+
   String message;
   serializeJson(doc, message);
   webSocket.sendTXT(message);
-  
-  Serial.println("[SWITCH TRACK] 💓 Heartbeat envoyé");
-}
 
-void sendTelemetry() {
+  Serial.println("[SWITCH TRACK] 💓 Heartbeat envoyé");
+}void sendTelemetry() {
   if (!isAuthenticated) return;
   
   JsonDocument doc;

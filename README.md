@@ -1,4 +1,9 @@
-# 💡 ESP32 LED Control Module
+<div align="center">
+
+<img src="docs/banniere.png" alt="Banc LED, version d'essai du Switch Track" width="100%">
+
+</div>
+
 
 Module ESP32 simple pour contrôler 2 LEDs via WiFi et WebSocket - Parfait pour les tests et l'expérimentation
 

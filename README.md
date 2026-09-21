@@ -4,166 +4,73 @@
 
 </div>
 
+Banc de test du module Switch Track, sans partie mécanique. Deux LED remplacent le vérin : l'une s'allume pour la position gauche, l'autre pour la droite. Tout le reste est identique au module réel, portail captif, authentification et liaison WebSocket comprises.
 
-Module ESP32 simple pour contrôler 2 LEDs via WiFi et WebSocket - Parfait pour les tests et l'expérimentation
+Il sert à valider la chaîne complète entre le serveur et un module avant de câbler un actionneur. Si les LED changent d'état au bon moment, le problème n'est pas dans le réseau.
 
----
+## Pourquoi un banc séparé
 
-## 🚀 À propos
+Déboguer une liaison WebSocket avec un vérin branché, c'est cumuler deux sources de panne. Un ordre qui n'arrive pas et un vérin qui ne bouge pas produisent exactement le même symptôme.
 
-Ce projet est un module ESP32 minimaliste conçu pour contrôler 2 LEDs et tester les communications WiFi/WebSocket. Il simule un système de changement d'état (position gauche/droite) avec des indicateurs visuels.
+Ce dépôt isole la moitié logicielle. On vérifie que l'authentification passe, que les commandes arrivent, que les réponses repartent, et que la reconnexion fonctionne après une coupure. Ensuite seulement on branche la mécanique.
 
-### Stack technique
+Le code est celui du Switch Track amputé du pilotage moteur, soit environ soixante lignes de moins.
 
-- **Hardware**: ESP32 DevKit
-- **Framework**: Arduino (PlatformIO)
-- **Communication**: WebSocket + WiFi
-- **Filesystem**: LittleFS
-- **Langage**: C++ (Arduino)
+## Matériel
 
----
+| Élément | Broche | Rôle |
+|:--|:--|:--|
+| LED gauche | GPIO 2 | Position gauche simulée |
+| LED droite | GPIO 4 | Position droite simulée |
 
-## 📦 Installation
+Une résistance de limitation par LED, rien d'autre. Un ESP32 DevKit et une plaque d'essai suffisent.
 
-### Prérequis
+## Commandes
 
-- [Visual Studio Code](https://code.visualstudio.com/)
-- [PlatformIO Extension](https://platformio.org/install/ide?install=vscode)
-- ESP32 DevKit board
+Les mêmes que le module réel, puisque c'est tout l'intérêt.
 
-### Installation du projet
+| Commande | Effet |
+|:--|:--|
+| `switch_left`, `left`, `switch_to_A` | LED gauche allumée |
+| `switch_right`, `right`, `switch_to_B` | LED droite allumée |
+| `get_position` | Retourne la position sans changer les LED |
 
-1. Clonez ce repository :
+## Compiler et téléverser
+
+Nécessite [PlatformIO](https://platformio.org/) dans Visual Studio Code.
+
 ```bash
-git clone https://github.com/Microcoaster/ESP-32-led.git
-cd ESP-32-led
+pio run                  # compilation
+pio run -t upload        # téléversement du firmware
+pio run -t uploadfs      # téléversement du portail vers LittleFS
+pio device monitor       # console série, 115200 bauds
 ```
 
-2. Ouvrez le projet dans VS Code
+## Première mise en service
 
-3. Installez les dépendances PlatformIO :
-```bash
-pio install
+1. Alimenter le module. Il crée un point d'accès WiFi.
+2. S'y connecter et ouvrir `http://192.168.4.1`.
+3. Renseigner le réseau de destination.
+4. Le module redémarre, rejoint le réseau et s'annonce auprès du serveur.
+
+La console série à 115200 bauds trace chaque étape : connexion WiFi, ouverture du WebSocket, authentification, puis chaque commande reçue. C'est là qu'on lit ce qui ne va pas.
+
+## Un point à traiter
+
+`MODULE_PASSWORD` est écrit en clair dans `src/main.cpp`, et c'est le même secret que celui du Switch Track. Un banc de test qui partage le secret du module de production n'est pas une bonne idée : il circule sur plus de machines, et rien ne le distingue du vrai module côté serveur.
+
+Deux corrections à faire ensemble : donner au banc son propre identifiant et son propre secret, et sortir ce secret du code vers la mémoire non volatile.
+
+## Bibliothèques
+
+```ini
+links2004/WebSockets        ; liaison avec le contrôleur
+bblanchon/ArduinoJson       ; messages échangés
+ayresnet/AyresWiFiManager   ; portail captif et reconnexion
 ```
 
----
-
-## ⚙️ Configuration
-
-### Branchements matériels
-
-Connectez sur votre ESP32 :
-
-- **LED Gauche** : D2 ──► Résistance 220Ω ──► (+) LED ──► GND
-- **LED Droite** : D4 ──► Résistance 220Ω ──► (+) LED ──► GND
-
-### Configuration WiFi
-
-Au premier démarrage, l'ESP32 crée un point d'accès WiFi :
-- **SSID**: `WifiManager-MicroCoaster`
-- **Mot de passe**: `123456789`
-- **IP**: `192.168.4.1`
-
-Connectez-vous et configurez votre WiFi domestique.
+Système de fichiers embarqué : **LittleFS**.
 
 ---
 
-## 🚀 Usage
-
-### Téléversement
-
-1. **Effacer la flash** :
-   ```bash
-   pio run --target erase --environment esp32dev
-   ```
-
-2. **Téléverser le programme** :
-   ```bash
-   pio run --target upload --environment esp32dev
-   ```
-
-3. **Téléverser le filesystem** :
-   ```bash
-   pio run --target uploadfs --environment esp32dev
-   ```
-
-### Test du module
-
-1. Ouvrez le moniteur série :
-   ```bash
-   pio device monitor
-   ```
-
-2. Vérifiez que :
-   - La LED sur D2 s'allume (position initiale "gauche")
-   - L'ESP32 se connecte au WiFi configuré
-   - Le message "✅ Initialisation terminée" apparaît
-
-### Commandes WebSocket
-
-Envoyez des commandes JSON au module via WebSocket :
-
-```json
-{
-  "type": "command",
-  "data": {
-    "command": "switch_left"
-  }
-}
-```
-
-Commandes disponibles :
-- `switch_left` / `left` : Allume LED gauche
-- `switch_right` / `right` : Allume LED droite
-- `get_position` : Retourne la position actuelle
-
----
-
-## 🔧 Développement
-
-### Structure du projet
-
-```
-ESP-32-led/
-├── src/
-│   └── main.cpp          # Code principal
-├── data/
-│   ├── index.html        # Interface WiFi
-│   └── ...               # Fichiers web
-├── include/
-├── lib/
-├── platformio.ini        # Configuration PlatformIO
-└── partitions_custom.csv # Schéma de partition
-```
-
-### Logs et debug
-
-Le module affiche des informations détaillées sur le port série :
-- Connexion WiFi
-- État des LEDs
-- Messages WebSocket reçus
-- Télémétrie
-
----
-
-## 📄 Licence
-
-Ce projet est sous licence propriétaire MicroCoaster.
-Voir le fichier `LICENCE` pour plus de détails.
-
----
-
-## ⚠️ Statut du projet
-
-✅ **Version stable 1.0.0**
-- Module fonctionnel pour tests
-- Code optimisé et simplifié
-- Documentation complète
-
----
-
-## 🔗 Liens utiles
-
-- [Documentation ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
-- [PlatformIO](https://docs.platformio.org/)
-- [WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
+<sub>MicroCoaster · Auteurs : CyberSpaceRS, Yamakajump</sub>

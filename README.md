@@ -32,6 +32,8 @@ Les mêmes que le module réel, puisque c'est tout l'intérêt.
 
 Nécessite [PlatformIO](https://platformio.org/) dans Visual Studio Code.
 
+<img src="docs/blocs/01.png" alt="Terminal bash : compiler et téléverser" width="100%">
+
 ```bash
 pio run                  # compilation
 pio run -t upload        # téléversement du firmware
@@ -47,6 +49,8 @@ pio device monitor       # console série, 115200 bauds
 La console série à 115200 bauds trace chaque étape : connexion WiFi, ouverture du WebSocket, authentification, puis chaque commande reçue. C'est là qu'on lit ce qui ne va pas.
 
 <img src="docs/sections/s05.png" alt="05 Écosystème" width="100%">
+
+<img src="docs/blocs/02.png" alt="Fichier platformio.ini : bibliothèques" width="100%">
 
 ```ini
 links2004/WebSockets        ; liaison avec le contrôleur

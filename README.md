@@ -18,22 +18,15 @@ Le code est celui du Switch Track amputé du pilotage moteur, soit environ soixa
 
 <img src="docs/sections/s02.png" alt="02 Matériel" width="100%">
 
-| Élément | Broche | Rôle |
-|:--|:--|:--|
-| LED gauche | GPIO 2 | Position gauche simulée |
-| LED droite | GPIO 4 | Position droite simulée |
+<img src="docs/schemas/brochage.png" alt="GPIO 2 porte la LED gauche, qui montre ce que ferait le vérin à gauche. GPIO 4 porte la LED droite, qui montre ce que ferait le vérin à droite." width="100%">
 
-Une résistance de limitation par LED, rien d'autre. Un ESP32 DevKit et une plaque d'essai suffisent.
+Une résistance de limitation par LED, rien d'autre. Un ESP32 DevKit et une plaque d'essai suffisent. Ce sont les mêmes broches que sur le module réel, où elles signalent la position pendant que le vérin travaille sur GPIO 21 et 22.
 
 <img src="docs/sections/s03.png" alt="03 Commandes" width="100%">
 
 Les mêmes que le module réel, puisque c'est tout l'intérêt.
 
-| Commande | Effet |
-|:--|:--|
-| `switch_left`, `left`, `switch_to_A` | LED gauche allumée |
-| `switch_right`, `right`, `switch_to_B` | LED droite allumée |
-| `get_position` | Retourne la position sans changer les LED |
+<img src="docs/schemas/commandes.png" alt="switch_left allume la LED gauche, comme si le vérin avait dévié la voie. switch_right allume la LED droite, comme si le vérin avait rendu la voie directe. get_position retourne la position simulée sans toucher aux LED." width="100%">
 
 <img src="docs/sections/s04.png" alt="04 Mise en service" width="100%">
 

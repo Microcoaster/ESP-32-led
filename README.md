@@ -54,13 +54,6 @@ pio device monitor       # console série, 115200 bauds
 4. Le module redémarre, rejoint le réseau et s'annonce auprès du serveur.
 
 La console série à 115200 bauds trace chaque étape : connexion WiFi, ouverture du WebSocket, authentification, puis chaque commande reçue. C'est là qu'on lit ce qui ne va pas.
-
-## Un point à traiter
-
-`MODULE_PASSWORD` est écrit en clair dans `src/main.cpp`, et c'est le même secret que celui du Switch Track. Un banc de test qui partage le secret du module de production n'est pas une bonne idée : il circule sur plus de machines, et rien ne le distingue du vrai module côté serveur.
-
-Deux corrections à faire ensemble : donner au banc son propre identifiant et son propre secret, et sortir ce secret du code vers la mémoire non volatile.
-
 ## Bibliothèques
 
 ```ini

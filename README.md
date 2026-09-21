@@ -30,6 +30,8 @@ Les mêmes que le module réel, puisque c'est tout l'intérêt.
 
 <img src="docs/sections/s04.png" alt="04 Mise en service" width="100%">
 
+Copiez d'abord [`include/env.h.example`](include/env.h.example) en `include/env.h` et renseignez-le : identifiants du portail de secours, identité du module et son secret. Ce fichier n'est pas versionné, et sans lui le firmware ne compile pas.
+
 Nécessite [PlatformIO](https://platformio.org/) dans Visual Studio Code.
 
 ```bash

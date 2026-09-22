@@ -61,7 +61,7 @@ bblanchon/ArduinoJson       ; the messages exchanged
 ayresnet/AyresWiFiManager   ; captive portal and reconnection
 ```
 
-Embedded filesystem: **LittleFS**. The module this bench is the test version of is the [Switch Track](https://github.com/Microcoaster/Switch-Track), and the common base is the [WiFi Manager](https://github.com/Microcoaster/MicroCoaster_WifiManager).
+Embedded filesystem: **LittleFS**. The module this bench is the test version of is the [Switch Track](https://github.com/Microcoaster/Switch-Track/blob/main/README.en.md), and the common base is the [WiFi Manager](https://github.com/Microcoaster/MicroCoaster_WifiManager/blob/main/README.en.md).
 
 ---
 

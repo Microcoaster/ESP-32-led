@@ -5,7 +5,7 @@
  * Version d'essai du Switch Track sans actionneur : deux LED simulent les positions
  * Sert à valider la chaîne WiFi et WebSocket avant de câbler le vérin
  *
- * Auteurs: CyberSpaceRS, Yamakajump
+ * Auteurs: Cybertrist, Yamakajump
  * Version: 2.0.0
  */
 
